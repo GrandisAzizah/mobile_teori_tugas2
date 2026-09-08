@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/custom_sidebar.dart';
 import 'daftar_kelompok_screen.dart';
+import 'kalkulator.dart';
 import 'ganjilgenap.dart';
 import 'jumlahtotal.dart';
 
@@ -34,7 +35,7 @@ class _MainScreenState extends State<MainScreen> {
 
   // Daftar halaman (urut sesuai indeks menu)
   final List<Widget> _pages = [
-    const KalkulatorPlaceholder(), // indeks 0
+    const Kalkulator(), // indeks 0
     const GanjilGenap(), // indeks 1 (bagian D)
     const DaftarKelompokScreen(), // indeks 2
     const JumlahTotal(), // indeks 3 (bagian D)
