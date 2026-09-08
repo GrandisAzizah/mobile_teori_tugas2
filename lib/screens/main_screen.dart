@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_theme.dart';
 import '../widgets/custom_sidebar.dart';
 import 'daftar_kelompok_screen.dart';
+import 'ganjilgenap.dart';
+import 'jumlahtotal.dart';
 
-// Halaman untuk membuat kalkulator 
+// Halaman untuk membuat kalkulator
 class KalkulatorPlaceholder extends StatelessWidget {
   const KalkulatorPlaceholder({super.key});
   @override
@@ -18,37 +21,7 @@ class KalkulatorPlaceholder extends StatelessWidget {
   }
 }
 
-// Halaman untuk membuat cek angka 
-class GanjilGenapPlaceholder extends StatelessWidget {
-  const GanjilGenapPlaceholder({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Mengecek Ganjil/Genap',
-        textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 18, color: Colors.grey),
-      ),
-    );
-  }
-}
-
-// Halaman untuk membuat jumlah total angka  
-class JumlahTotalAngkaPlaceholder extends StatelessWidget {
-  const JumlahTotalAngkaPlaceholder ({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Jumlah Total Angka',
-        textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 18, color: Colors.grey),
-      ),
-    );
-  }
-}
-
-// Main screen dengan sidebar 
+// Main screen dengan sidebar
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -57,14 +30,14 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 0; // 0: Kalkulator, 1: Ganjil/Genap, 2: Daftar Kelompok, 3: Jumlah Total Angka 
+  int _selectedIndex = 0; // 0: Kalkulator, 1: Ganjil/Genap, 2: Daftar Kelompok, 3: Jumlah Total Angka
 
   // Daftar halaman (urut sesuai indeks menu)
   final List<Widget> _pages = [
-    const KalkulatorPlaceholder(),   // indeks 0
-    const GanjilGenapPlaceholder(),  // indeks 1
-    const DaftarKelompokScreen(),    // indeks 2 
-    const JumlahTotalAngkaPlaceholder(), // indeks 3 
+    const KalkulatorPlaceholder(), // indeks 0
+    const GanjilGenap(), // indeks 1 (bagian D)
+    const DaftarKelompokScreen(), // indeks 2
+    const JumlahTotal(), // indeks 3 (bagian D)
   ];
 
   // Judul AppBar untuk setiap halaman
@@ -72,27 +45,24 @@ class _MainScreenState extends State<MainScreen> {
     'Kalkulator',
     'Cek Ganjil/Genap',
     'Daftar Kelompok',
-    'Jumlah Total Angka', 
+    'Jumlah Total Angka',
   ];
 
-  // Halaman untuk logout 
+  // Halaman untuk logout
   void _onItemTapped(int index) {
-  if (index == 4) {
-    // Nanti diganti dengan logika untuk logout 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Logout'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-    return;
-  }
+    if (index == 4) {
+      // Nanti diganti dengan logika untuk logout
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Logout'), duration: Duration(seconds: 2)),
+      );
+      return;
+    }
 
-  // Mengganti halaman untuk indeks 0-3
-  setState(() {
-    _selectedIndex = index;
-  });
-}
+    // Mengganti halaman untuk indeks 0-3
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -115,10 +85,7 @@ class _MainScreenState extends State<MainScreen> {
         currentIndex: _selectedIndex,
         onItemTapped: _onItemTapped,
       ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: _pages),
     );
   }
-} 
+}

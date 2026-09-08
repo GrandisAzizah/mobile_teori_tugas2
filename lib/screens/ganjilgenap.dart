@@ -42,47 +42,47 @@ class _GanjilGenapState extends State<GanjilGenap> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Cek Ganjil / Genap')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: _controller,
-              keyboardType: const TextInputType.numberWithOptions(signed: true),
-              decoration: const InputDecoration(
-                labelText: 'Masukkan bilangan',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.pin),
-              ),
-              onSubmitted: (_) => _cekGanjilGenap(),
+    // Catatan: tidak pakai Scaffold/AppBar sendiri di sini karena
+    // halaman ini ditampilkan di dalam MainScreen yang sudah
+    // punya AppBar (lihat lib/screens/main_screen.dart).
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          TextField(
+            controller: _controller,
+            keyboardType: const TextInputType.numberWithOptions(signed: true),
+            decoration: const InputDecoration(
+              labelText: 'Masukkan bilangan',
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.pin),
             ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _cekGanjilGenap,
-                icon: const Icon(Icons.check_circle_outline),
-                label: const Text('Cek Sekarang'),
+            onSubmitted: (_) => _cekGanjilGenap(),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _cekGanjilGenap,
+              icon: const Icon(Icons.check_circle_outline),
+              label: const Text('Cek Sekarang'),
+            ),
+          ),
+          const SizedBox(height: 32),
+          if (_hasil.isNotEmpty) ...[
+            Icon(_icon, size: 64, color: _color),
+            const SizedBox(height: 12),
+            Text(
+              _hasil,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: _color,
               ),
             ),
-            const SizedBox(height: 32),
-            if (_hasil.isNotEmpty) ...[
-              Icon(_icon, size: 64, color: _color),
-              const SizedBox(height: 12),
-              Text(
-                _hasil,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: _color,
-                ),
-              ),
-            ],
           ],
-        ),
+        ],
       ),
     );
   }

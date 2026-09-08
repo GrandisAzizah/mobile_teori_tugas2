@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_theme.dart';
 
 class CustomSidebar extends StatelessWidget {
@@ -25,8 +26,8 @@ class CustomSidebar extends StatelessWidget {
             //   gradient: LinearGradient(
             //     colors: [AppTheme.primary, AppTheme.primaryLight],
 
-            color: AppTheme.primary, 
-              // ),
+            color: AppTheme.primary,
+            // ),
             // ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,21 +50,21 @@ class CustomSidebar extends StatelessWidget {
 
           // ===== Menu Items =====
           _buildMenuItem(
-            context, 
+            context,
             index: 0,
             icon: Icons.calculate,
             title: 'Kalkulator',
             isActive: currentIndex == 0,
           ),
           _buildMenuItem(
-            context, 
+            context,
             index: 1,
             icon: Icons.numbers,
             title: 'Cek Ganjil/Genap',
             isActive: currentIndex == 1,
           ),
           _buildMenuItem(
-            context, 
+            context,
             index: 2,
             icon: Icons.group,
             title: 'Daftar Kelompok',
@@ -71,14 +72,14 @@ class CustomSidebar extends StatelessWidget {
           ),
           _buildMenuItem(
             context,
-            index: 3, 
-            icon: Icons.summarize, 
-            title: 'Jumlah Total Angka', 
-            isActive: currentIndex == 3, 
-          ), 
+            index: 3,
+            icon: Icons.summarize,
+            title: 'Jumlah Total Angka',
+            isActive: currentIndex == 3,
+          ),
           const Spacer(),
           _buildMenuItem(
-            context, 
+            context,
             index: 4,
             icon: Icons.logout,
             title: 'Log Out',
@@ -116,13 +117,11 @@ class CustomSidebar extends StatelessWidget {
         ),
       ),
       tileColor: bgColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       onTap: () {
         Navigator.pop(context); // Tutup sidebar
         onItemTapped(index);
       },
     );
   }
-} 
+}

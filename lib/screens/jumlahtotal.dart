@@ -70,97 +70,97 @@ class _JumlahTotalState extends State<JumlahTotal> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Jumlah Total Angka')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Masukkan campuran angka & huruf dalam satu field '
-              '(pisahkan dengan spasi/koma), contoh: 1 2 a b c 3 4',
+    // Catatan: tidak pakai Scaffold/AppBar sendiri di sini karena
+    // halaman ini ditampilkan di dalam MainScreen yang sudah
+    // punya AppBar (lihat lib/screens/main_screen.dart).
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Masukkan campuran angka & huruf dalam satu field '
+            '(pisahkan dengan spasi/koma), contoh: 1 2 a b c 3 4',
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _controller,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              hintText: '1 2 a b c 3 4',
+              border: OutlineInputBorder(),
             ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _controller,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                hintText: '1 2 a b c 3 4',
-                border: OutlineInputBorder(),
-              ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _hitungTotal,
+              icon: const Icon(Icons.functions),
+              label: const Text('Hitung Jumlah Total'),
             ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _hitungTotal,
-                icon: const Icon(Icons.functions),
-                label: const Text('Hitung Jumlah Total'),
-              ),
-            ),
-            const SizedBox(height: 24),
-            if (_sudahHitung)
-              Expanded(
-                child: ListView(
-                  children: [
-                    Card(
-                      color: Colors.deepPurple.shade50,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+          ),
+          const SizedBox(height: 24),
+          if (_sudahHitung)
+            Expanded(
+              child: ListView(
+                children: [
+                  Card(
+                    color: Colors.deepPurple.shade50,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Angka ditemukan: ${_angkaValid.map(_fmt).join(', ')}',
+                          ),
+                          if (_diabaikan.isNotEmpty) ...[
+                            const SizedBox(height: 4),
                             Text(
-                              'Angka ditemukan: ${_angkaValid.map(_fmt).join(', ')}',
-                            ),
-                            if (_diabaikan.isNotEmpty) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                'Diabaikan (bukan angka): ${_diabaikan.join(', ')}',
-                                style: const TextStyle(color: Colors.grey),
-                              ),
-                            ],
-                            const SizedBox(height: 8),
-                            Text(
-                              'Total: ${_fmt(_total)}',
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.deepPurple,
-                              ),
+                              'Diabaikan (bukan angka): ${_diabaikan.join(', ')}',
+                              style: const TextStyle(color: Colors.grey),
                             ),
                           ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    if (_langkah.isNotEmpty) ...[
-                      const Text(
-                        'Langkah perhitungan:',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      ...List.generate(
-                        _langkah.length,
-                        (i) => ListTile(
-                          dense: true,
-                          leading: CircleAvatar(
-                            radius: 14,
-                            child: Text(
-                              '${i + 1}',
-                              style: const TextStyle(fontSize: 12),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Total: ${_fmt(_total)}',
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.deepPurple,
                             ),
                           ),
-                          title: Text(_langkah[i]),
-                        ),
+                        ],
                       ),
-                    ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (_langkah.isNotEmpty) ...[
+                    const Text(
+                      'Langkah perhitungan:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    ...List.generate(
+                      _langkah.length,
+                      (i) => ListTile(
+                        dense: true,
+                        leading: CircleAvatar(
+                          radius: 14,
+                          child: Text(
+                            '${i + 1}',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                        title: Text(_langkah[i]),
+                      ),
+                    ),
                   ],
-                ),
+                ],
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
