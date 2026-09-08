@@ -65,17 +65,17 @@ class CustomSidebar extends StatelessWidget {
           ),
           _buildMenuItem(
             context,
-            index: 2,
-            icon: Icons.group,
-            title: 'Daftar Kelompok',
-            isActive: currentIndex == 2,
-          ),
-          _buildMenuItem(
-            context,
             index: 3,
             icon: Icons.summarize,
             title: 'Jumlah Total Angka',
             isActive: currentIndex == 3,
+          ),
+          _buildMenuItem(
+            context,
+            index: 2,
+            icon: Icons.group,
+            title: 'Daftar Kelompok',
+            isActive: currentIndex == 2,
           ),
           const Spacer(),
           _buildMenuItem(
