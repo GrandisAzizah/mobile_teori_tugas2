@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_tugas2/screens/login_screen.dart';
 
 import '../theme/app_theme.dart';
 
@@ -120,7 +121,15 @@ class CustomSidebar extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       onTap: () {
         Navigator.pop(context); // Tutup sidebar
-        onItemTapped(index);
+
+        if (isLogout) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+          );
+        } else {
+          onItemTapped(index);
+        }
       },
     );
   }
