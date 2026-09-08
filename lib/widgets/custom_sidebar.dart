@@ -104,7 +104,7 @@ class CustomSidebar extends StatelessWidget {
         ? Colors.red
         : (isActive ? AppTheme.primary : AppTheme.grey[700]!);
     final Color bgColor = isActive
-        ? AppTheme.primary.withOpacity(0.1)
+        ? AppTheme.primary.withValues(alpha: 0.1)
         : Colors.transparent;
 
     return ListTile(
