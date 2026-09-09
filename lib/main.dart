@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'theme/app_theme.dart'; // Untuk mengimport tema
-import 'screens/main_screen.dart';
 import 'screens/login_screen.dart';
 
 void main() {

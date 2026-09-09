@@ -13,8 +13,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
   // Validasi apakah form field sudah diisi
-  TextEditingController _usernameController = TextEditingController();
-  TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   // Sembunyikan password
   bool _isPasswordVisible = false;
@@ -156,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       content: Container(
                         constraints: BoxConstraints(maxWidth: 300),
                         child: Text(
-                          'Username tidak ditemukan! Silakan coba lagi.',
+                          'Username salah! Coba lagi.',
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),

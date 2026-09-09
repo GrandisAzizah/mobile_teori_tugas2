@@ -7,21 +7,6 @@ import 'kalkulator.dart';
 import 'ganjilgenap.dart';
 import 'jumlahtotal.dart';
 
-// Halaman untuk membuat kalkulator
-class KalkulatorPlaceholder extends StatelessWidget {
-  const KalkulatorPlaceholder({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Kalkulator',
-        textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 18, color: Colors.grey),
-      ),
-    );
-  }
-}
-
 // Main screen dengan sidebar
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
