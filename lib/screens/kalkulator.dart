@@ -24,8 +24,7 @@ class _KalkulatorState extends State<Kalkulator> {
   // Teks ekspresi kecil di atas layar, misal "12 + 4".
   String _ekspresi = '';
 
-  // True jika layar baru saja menampilkan hasil (=) atau baru pilih operator,
-  // sehingga input angka berikutnya harus mulai dari awal (bukan menyambung).
+  // True jika layar baru saja menampilkan hasil (=) atau baru pilih operator, sehingga input angka berikutnya harus mulai dari awal (bukan menyambung).
   bool _mulaiInputBaru = true;
 
   String? _errorText;
@@ -49,9 +48,20 @@ class _KalkulatorState extends State<Kalkulator> {
     return double.tryParse(teks.replaceAll(',', '.'));
   }
 
+  // Di atas batas ini (atau saking kecilnya mendekati nol), hasil ditampilkan pakai notasi ilmiah (mis. "4,98082934503E18") biar tidak kepanjangan di layar.
+  static const double _batasBesar = 1e12;
+  static const double _batasKecil = 1e-9;
+
   String _formatAngka(double n) {
     if (n.isNaN || n.isInfinite) return 'Error';
-    if (n == n.roundToDouble() && n.abs() < 1e15) {
+    if (n == 0) return '0';
+
+    final absN = n.abs();
+    if (absN >= _batasBesar || absN < _batasKecil) {
+      return _formatIlmiah(n);
+    }
+
+    if (n == n.roundToDouble()) {
       return n.toInt().toString();
     }
     // Batasi digit desimal biar tidak kepanjangan, tapi buang nol berlebih.
@@ -59,6 +69,21 @@ class _KalkulatorState extends State<Kalkulator> {
     s = s.replaceFirst(RegExp(r'0+$'), '');
     s = s.replaceFirst(RegExp(r'\.$'), '');
     return s.replaceFirst('.', ',');
+  }
+
+  // Format notasi ilmiah, mis. 4980829345030000000 -> "4,98082934503E18".
+  String _formatIlmiah(double n) {
+    String s = n.toStringAsExponential(10); // contoh: "4.9808293450e+18"
+    final bagian = s.split('e');
+    String mantissa = bagian[0];
+    if (mantissa.contains('.')) {
+      mantissa = mantissa.replaceFirst(RegExp(r'0+$'), '');
+      mantissa = mantissa.replaceFirst(RegExp(r'\.$'), '');
+    }
+    mantissa = mantissa.replaceFirst('.', ',');
+    final eksponenTeks = bagian[1].replaceFirst('+', '');
+    final eksponen = int.parse(eksponenTeks);
+    return '${mantissa}E$eksponen';
   }
 
   void _tekanAngka(String digit) {
@@ -146,8 +171,7 @@ class _KalkulatorState extends State<Kalkulator> {
       if (_operandPertama != null &&
           _operasiTerpilih != null &&
           !_mulaiInputBaru) {
-        // Sudah ada operasi tertunda dan user mengetik angka baru:
-        // hitung dulu berantai (chaining), contoh 12 + 4 + 3 -> hitung 12+4 dulu.
+        // Sudah ada operasi tertunda dan user mengetik angka baru: hitung dulu berantai (chaining), contoh 12 + 4 + 3 -> hitung 12+4 dulu.
         if (_operasiTerpilih == _Operasi.bagi && nilaiSaatIni == 0) {
           _errorText = 'Tidak bisa membagi dengan 0';
           _operandPertama = null;
@@ -242,7 +266,7 @@ class _KalkulatorState extends State<Kalkulator> {
   }
 }
 
-/// Layar tampilan kalkulator: baris ekspresi kecil + angka besar.
+// Layar tampilan kalkulator: baris ekspresi kecil + angka besar.
 class _Layar extends StatelessWidget {
   final String ekspresi;
   final String nilai;
@@ -310,7 +334,7 @@ class _Layar extends StatelessWidget {
   }
 }
 
-/// Grid tombol kalkulator: AC, ⌫, %, ÷ / 7 8 9 × / 4 5 6 − / 1 2 3 + / +/- 0 , =
+// Grid tombol kalkulator: AC, ⌫, %, ÷ / 7 8 9 × / 4 5 6 − / 1 2 3 + / +/- 0 , =
 class _Keypad extends StatelessWidget {
   final void Function(String digit) onAngka;
   final VoidCallback onHapus;
