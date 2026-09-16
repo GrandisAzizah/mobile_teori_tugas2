@@ -4,6 +4,9 @@ import '../theme/app_theme.dart';
 
 enum _Operasi { tambah, kurang, kali, bagi }
 
+// Dilempar (throw) dari _evaluasiDenganPrioritas saat ketemu pembagian dengan 0, supaya bisa ditangkap dan ditampilkan sebagai pesan error, bukan bikin aplikasi crash atau nampilin "Infinity".
+class _BagiNolException implements Exception {}
+
 class Kalkulator extends StatefulWidget {
   const Kalkulator({super.key});
 
@@ -15,13 +18,11 @@ class _KalkulatorState extends State<Kalkulator> {
   // Nilai yang sedang ditampilkan / sedang diketik di layar.
   String _layar = '0';
 
-  // Operand pertama yang sudah "dikunci" ketika operator ditekan.
-  double? _operandPertama;
+  // Antrian angka & operator yang sudah "dikunci" selama user ngetik. Contoh: setelah ngetik "12 + 4 x", isinya _antrianAngka=[12,4] dan _antrianOperasi=[tambah, kali] — belum dihitung, nunggu ditekan "=". Ini yang bikin bisa dukung urutan operasi matematika (kali/bagi duluan).
+  final List<double> _antrianAngka = [];
+  final List<_Operasi> _antrianOperasi = [];
 
-  // Operator yang sedang dipilih (menunggu operand kedua).
-  _Operasi? _operasiTerpilih;
-
-  // Teks ekspresi kecil di atas layar, misal "12 + 4".
+  // Teks ekspresi kecil di atas layar, misal "12 + 4 ×".
   String _ekspresi = '';
 
   // True jika layar baru saja menampilkan hasil (=) atau baru pilih operator, sehingga input angka berikutnya harus mulai dari awal (bukan menyambung).
@@ -119,8 +120,8 @@ class _KalkulatorState extends State<Kalkulator> {
   void _bersihkan() {
     setState(() {
       _layar = '0';
-      _operandPertama = null;
-      _operasiTerpilih = null;
+      _antrianAngka.clear();
+      _antrianOperasi.clear();
       _ekspresi = '';
       _mulaiInputBaru = true;
       _errorText = null;
@@ -159,6 +160,18 @@ class _KalkulatorState extends State<Kalkulator> {
     }
   }
 
+  // Bangun teks ekspresi berjalan buat ditampilkan di layar kecil, misal "12 + 4 ×" (operator terakhir belum ada angkanya).
+  String _bangunEkspresiBerjalan() {
+    final buf = StringBuffer();
+    for (int i = 0; i < _antrianOperasi.length; i++) {
+      buf.write(_formatAngka(_antrianAngka[i]));
+      buf.write(' ');
+      buf.write(_lambangOperasi(_antrianOperasi[i]));
+      buf.write(' ');
+    }
+    return buf.toString().trimRight();
+  }
+
   void _pilihOperasi(_Operasi operasi) {
     setState(() {
       final nilaiSaatIni = _parseLayar(_layar);
@@ -168,70 +181,89 @@ class _KalkulatorState extends State<Kalkulator> {
       }
       _errorText = null;
 
-      if (_operandPertama != null &&
-          _operasiTerpilih != null &&
-          !_mulaiInputBaru) {
-        // Sudah ada operasi tertunda dan user mengetik angka baru: hitung dulu berantai (chaining), contoh 12 + 4 + 3 -> hitung 12+4 dulu.
-        if (_operasiTerpilih == _Operasi.bagi && nilaiSaatIni == 0) {
-          _errorText = 'Tidak bisa membagi dengan 0';
-          _operandPertama = null;
-          _operasiTerpilih = null;
-          _ekspresi = '';
-          _layar = '0';
-          _mulaiInputBaru = true;
-          return;
-        }
-        _operandPertama = _hitungOperasi(
-          _operandPertama!,
-          nilaiSaatIni,
-          _operasiTerpilih!,
-        );
-        _layar = _formatAngka(_operandPertama!);
+      if (_mulaiInputBaru && _antrianOperasi.isNotEmpty) {
+        // User ganti pikiran soal operator sebelum sempat ngetik angka baru (mis. pencet "+" lalu berubah pikiran pencet "×") -> cukup timpa operator terakhir, jangan sampai angkanya dobel.
+        _antrianOperasi[_antrianOperasi.length - 1] = operasi;
       } else {
-        _operandPertama = nilaiSaatIni;
+        // Simpan angka & operator ke antrian. TIDAK dihitung sekarang - baru dihitung sekaligus pas "=" ditekan, sesuai prioritas kali/bagi.
+        _antrianAngka.add(nilaiSaatIni);
+        _antrianOperasi.add(operasi);
       }
 
-      _operasiTerpilih = operasi;
-      _ekspresi =
-          '${_formatAngka(_operandPertama!)} ${_lambangOperasi(operasi)}';
+      _ekspresi = _bangunEkspresiBerjalan();
       _mulaiInputBaru = true;
     });
   }
 
   void _hitungSama() {
     setState(() {
-      final nilaiKedua = _parseLayar(_layar);
-      if (_operasiTerpilih == null ||
-          _operandPertama == null ||
-          nilaiKedua == null) {
-        return;
+      final nilaiTerakhir = _parseLayar(_layar);
+      if (nilaiTerakhir == null || _antrianOperasi.isEmpty) {
+        return; // belum ada operasi yang bisa dihitung
       }
 
-      if (_operasiTerpilih == _Operasi.bagi && nilaiKedua == 0) {
+      final angkaLengkap = [..._antrianAngka, nilaiTerakhir];
+      final operasiLengkap = [..._antrianOperasi];
+
+      double hasil;
+      try {
+        hasil = _evaluasiDenganPrioritas(angkaLengkap, operasiLengkap);
+      } on _BagiNolException {
         _errorText = 'Tidak bisa membagi dengan 0';
         _layar = '0';
-        _operandPertama = null;
-        _operasiTerpilih = null;
+        _antrianAngka.clear();
+        _antrianOperasi.clear();
         _ekspresi = '';
         _mulaiInputBaru = true;
         return;
       }
 
       _errorText = null;
-      _ekspresi =
-          '${_formatAngka(_operandPertama!)} '
-          '${_lambangOperasi(_operasiTerpilih!)} '
-          '${_formatAngka(nilaiKedua)} =';
-      final hasil = _hitungOperasi(
-        _operandPertama!,
-        nilaiKedua,
-        _operasiTerpilih!,
-      );
+      final ekspresiPenuh = StringBuffer();
+      for (int i = 0; i < operasiLengkap.length; i++) {
+        ekspresiPenuh.write(_formatAngka(angkaLengkap[i]));
+        ekspresiPenuh.write(' ');
+        ekspresiPenuh.write(_lambangOperasi(operasiLengkap[i]));
+        ekspresiPenuh.write(' ');
+      }
+      ekspresiPenuh.write(_formatAngka(angkaLengkap.last));
+      ekspresiPenuh.write(' =');
+      _ekspresi = ekspresiPenuh.toString();
+
       _layar = _formatAngka(hasil);
-      _operandPertama = null;
-      _operasiTerpilih = null;
+      _antrianAngka.clear();
+      _antrianOperasi.clear();
       _mulaiInputBaru = true;
     });
+  }
+
+  // Evaluasi urutan angka & operator sesuai prioritas matematika (PEMDAS): kali (×) & bagi (÷) dihitung duluan dari kiri ke kanan, baru sisanya tambah (+) & kurang (−) juga dari kiri ke kanan. Contoh: [12, 4, 2] dengan [tambah, kali] -> 12 + (4 × 2) = 20.
+  double _evaluasiDenganPrioritas(List<double> angka, List<_Operasi> operasi) {
+    // Tahap 1: selesaikan semua kali & bagi lebih dulu.
+    final List<double> angkaSisa = [angka[0]];
+    final List<_Operasi> operasiSisa = [];
+
+    for (int i = 0; i < operasi.length; i++) {
+      final op = operasi[i];
+      final b = angka[i + 1];
+      if (op == _Operasi.kali || op == _Operasi.bagi) {
+        if (op == _Operasi.bagi && b == 0) {
+          throw _BagiNolException();
+        }
+        final a = angkaSisa.removeLast();
+        angkaSisa.add(_hitungOperasi(a, b, op));
+      } else {
+        angkaSisa.add(b);
+        operasiSisa.add(op);
+      }
+    }
+
+    // Tahap 2: baru tambah & kurang, dari kiri ke kanan.
+    double hasil = angkaSisa[0];
+    for (int i = 0; i < operasiSisa.length; i++) {
+      hasil = _hitungOperasi(hasil, angkaSisa[i + 1], operasiSisa[i]);
+    }
+    return hasil;
   }
 
   @override
@@ -257,7 +289,9 @@ class _KalkulatorState extends State<Kalkulator> {
               onPersen: _persen,
               onOperasi: _pilihOperasi,
               onSama: _hitungSama,
-              operasiAktif: _operasiTerpilih,
+              operasiAktif: _mulaiInputBaru && _antrianOperasi.isNotEmpty
+                  ? _antrianOperasi.last
+                  : null,
             ),
           ),
         ),
