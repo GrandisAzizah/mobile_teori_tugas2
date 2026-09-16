@@ -18,7 +18,10 @@ class _TapeStep {
 class _JumlahTotalState extends State<JumlahTotal> {
   final _controller = TextEditingController();
 
-  double _total = 0;
+  // Pakai BigInt (bukan double) karena sekarang semua angka diperlakukan
+  // sebagai bilangan bulat murni -- gak ada lagi desimal, jadi gak ada
+  // resiko pembulatan floating-point sama sekali, walau angkanya panjang.
+  BigInt _total = BigInt.zero;
   List<_TapeStep> _steps = [];
   List<String> _diabaikan = [];
   List<String> _angkaDitemukan = [];
@@ -34,9 +37,21 @@ class _JumlahTotalState extends State<JumlahTotal> {
   void _hitungTotal() {
     final text = _controller.text;
 
-    final valid = RegExp(r'-?\d+(\.\d+)?')
+    // Cuma bilangan BULAT yang ditangkap (gak ada lagi grup desimal).
+    // Ini sengaja: kalau titik dianggap tanda desimal, angka format
+    // Indonesia semacam "11.370" (artinya sebelas ribu tiga ratus tujuh
+    // puluh) malah kebaca "11,37" -- rancu. Sekarang titik diperlakukan
+    // sama kayak huruf: cuma pemisah, bukan bagian dari angka. Jadi
+    // "11.370" -> dua bilangan terpisah: 11 dan 370.
+    //
+    // Minus HANYA dianggap tanda negatif kalau karakter sebelumnya BUKAN
+    // angka (didahului spasi/huruf/awal teks), contoh: "suhu -5 derajat"
+    // -> -5. Kalau minusnya nempel di ANTARA dua angka (mis. rentang
+    // tanggal "1-14 September"), itu dianggap cuma pemisah biasa, jadi
+    // "1" dan "14" dua-duanya tetap positif -- bukan "1" dan "-14".
+    final valid = RegExp(r'(?<!\d)-?\d+')
         .allMatches(text)
-        .map((m) => double.parse(m.group(0)!))
+        .map((m) => BigInt.parse(m.group(0)!))
         .toList();
 
     final diabaikan = RegExp(r'[A-Za-z]+')
@@ -51,20 +66,20 @@ class _JumlahTotalState extends State<JumlahTotal> {
     final jumlahDigit = RegExp(r'\d').allMatches(text).length;
 
     // Daftar bilangan yang benar-benar dipakai untuk penjumlahan, dalam
-    // urutan kemunculannya, sudah diformat rapi (tanpa sisa pembulatan).
-    final angkaDitemukan = valid.map(_fmt).toList();
+    // urutan kemunculannya.
+    final angkaDitemukan = valid.map((n) => n.toString()).toList();
 
     final steps = <_TapeStep>[];
-    double running = 0;
+    var running = BigInt.zero;
     for (var i = 0; i < valid.length; i++) {
       if (i == 0) {
         running = valid[i];
-        steps.add(_TapeStep('', _fmt(valid[i])));
+        steps.add(_TapeStep('', valid[i].toString()));
       } else {
         final n = valid[i];
         running += n;
-        final op = n < 0 ? '- ${_fmt(n.abs())}' : '+ ${_fmt(n)}';
-        steps.add(_TapeStep(op, _fmt(running)));
+        final op = n < BigInt.zero ? '- ${(-n)}' : '+ $n';
+        steps.add(_TapeStep(op, running.toString()));
       }
     }
 
@@ -76,15 +91,6 @@ class _JumlahTotalState extends State<JumlahTotal> {
       _total = running;
       _sudahHitung = true;
     });
-  }
-
-  String _fmt(double n) {
-    var s = n.toStringAsFixed(6);
-    if (s.contains('.')) {
-      s = s.replaceFirst(RegExp(r'0+$'), '');
-      s = s.replaceFirst(RegExp(r'\.$'), '');
-    }
-    return s == '-0' ? '0' : s;
   }
 
   @override
@@ -253,7 +259,7 @@ class _DigitCountBadge extends StatelessWidget {
 
 class _ReceiptTape extends StatelessWidget {
   final List<_TapeStep> steps;
-  final double total;
+  final BigInt total;
   final List<String> diabaikan;
   final List<String> angkaDitemukan;
   final int jumlahDigit;
@@ -265,15 +271,6 @@ class _ReceiptTape extends StatelessWidget {
     required this.angkaDitemukan,
     required this.jumlahDigit,
   });
-
-  String _fmt(double n) {
-    var s = n.toStringAsFixed(6);
-    if (s.contains('.')) {
-      s = s.replaceFirst(RegExp(r'0+$'), '');
-      s = s.replaceFirst(RegExp(r'\.$'), '');
-    }
-    return s == '-0' ? '0' : s;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -361,7 +358,7 @@ class _ReceiptTape extends StatelessWidget {
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                   ),
                   Text(
-                    _fmt(total),
+                    total.toString(),
                     style: const TextStyle(
                       fontFamily: 'monospace',
                       fontWeight: FontWeight.bold,
