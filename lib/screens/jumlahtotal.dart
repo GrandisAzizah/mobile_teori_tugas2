@@ -9,7 +9,6 @@ class JumlahTotal extends StatefulWidget {
   State<JumlahTotal> createState() => _JumlahTotalState();
 }
 
-/// Satu baris di "struk": operasi (mis. "+ 3") dan hasil berjalannya.
 class _TapeStep {
   final String op;
   final String result;
@@ -22,6 +21,8 @@ class _JumlahTotalState extends State<JumlahTotal> {
   double _total = 0;
   List<_TapeStep> _steps = [];
   List<String> _diabaikan = [];
+  List<String> _angkaDitemukan = [];
+  int _jumlahDigit = 0;
   bool _sudahHitung = false;
 
   @override
@@ -33,24 +34,26 @@ class _JumlahTotalState extends State<JumlahTotal> {
   void _hitungTotal() {
     final text = _controller.text;
 
-    // Setiap deretan angka dianggap angka sendiri (boleh desimal pakai titik),
-    // dan berhenti begitu ketemu huruf ATAU spasi. Tanda '-' yang nempel
-    // langsung di depan angka membuat angka itu negatif.
-    // Contoh: "ht-67ksn9" -> -67 dan 9 (dua angka terpisah, bukan digabung).
-    // Contoh: "harga-3.5kg dan 2.7km" -> -3.5 dan 2.7.
     final valid = RegExp(r'-?\d+(\.\d+)?')
         .allMatches(text)
         .map((m) => double.parse(m.group(0)!))
         .toList();
 
-    // Sisa huruf (bukan angka) ditampilkan sebagai info, bukan error.
     final diabaikan = RegExp(r'[A-Za-z]+')
         .allMatches(text)
         .map((m) => m.group(0)!)
         .toList();
 
-    // Bangun baris struk secara kumulatif, contoh:
-    // "g3r shakhsk89 1km" -> 3 -> + 89 = 92 -> + 1 = 93
+    // Jumlah karakter angka (digit 0-9) di dalam teks, dihitung per karakter
+    // -- bukan per "kelompok angka". Contoh: "hskeksmns2024" -> 4 angka
+    // (2, 0, 2, 4), meskipun untuk penjumlahan di atas "2024" tetap
+    // diperlakukan sebagai satu bilangan (2024).
+    final jumlahDigit = RegExp(r'\d').allMatches(text).length;
+
+    // Daftar bilangan yang benar-benar dipakai untuk penjumlahan, dalam
+    // urutan kemunculannya, sudah diformat rapi (tanpa sisa pembulatan).
+    final angkaDitemukan = valid.map(_fmt).toList();
+
     final steps = <_TapeStep>[];
     double running = 0;
     for (var i = 0; i < valid.length; i++) {
@@ -68,14 +71,14 @@ class _JumlahTotalState extends State<JumlahTotal> {
     setState(() {
       _steps = steps;
       _diabaikan = diabaikan;
+      _angkaDitemukan = angkaDitemukan;
+      _jumlahDigit = jumlahDigit;
       _total = running;
       _sudahHitung = true;
     });
   }
 
   String _fmt(double n) {
-    // Dibulatkan dulu ke 6 desimal supaya sisa pembulatan biner
-    // (mis. -3.5 + 2.7 = -0.7999999999999998) tidak ikut tampil.
     var s = n.toStringAsFixed(6);
     if (s.contains('.')) {
       s = s.replaceFirst(RegExp(r'0+$'), '');
@@ -86,9 +89,6 @@ class _JumlahTotalState extends State<JumlahTotal> {
 
   @override
   Widget build(BuildContext context) {
-    // Catatan: tidak pakai Scaffold/AppBar sendiri di sini karena
-    // halaman ini ditampilkan di dalam MainScreen yang sudah
-    // punya AppBar (lihat lib/screens/main_screen.dart).
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppTheme.spacingLarge),
       child: Column(
@@ -124,7 +124,13 @@ class _JumlahTotalState extends State<JumlahTotal> {
           ),
           const SizedBox(height: AppTheme.spacingLarge),
           if (_sudahHitung)
-            _ReceiptTape(steps: _steps, total: _total, diabaikan: _diabaikan)
+            _ReceiptTape(
+              steps: _steps,
+              total: _total,
+              diabaikan: _diabaikan,
+              angkaDitemukan: _angkaDitemukan,
+              jumlahDigit: _jumlahDigit,
+            )
           else
             const _EmptyHint(),
         ],
@@ -133,7 +139,6 @@ class _JumlahTotalState extends State<JumlahTotal> {
   }
 }
 
-/// Ajakan bertindak sebelum ada hasil, bukan cuma layar kosong.
 class _EmptyHint extends StatelessWidget {
   const _EmptyHint();
 
@@ -160,22 +165,108 @@ class _EmptyHint extends StatelessWidget {
   }
 }
 
-/// Tampilan hasil bergaya struk mesin hitung:
-/// setiap angka jadi satu baris, garis putus-putus, lalu total di bawah.
+/// Menampilkan daftar bilangan (bukan sekadar digit) yang benar-benar
+/// dipakai untuk penjumlahan, sesuai urutan kemunculan di teks. Ini beda
+/// dari _DigitCountBadge: "2024" di sini dihitung SATU bilangan, bukan 4.
+class _FoundNumbersBadge extends StatelessWidget {
+  final List<String> angkaDitemukan;
+  const _FoundNumbersBadge({required this.angkaDitemukan});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spacingMedium,
+        vertical: AppTheme.spacingSmall,
+      ),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryLight,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppTheme.secondary, width: 1),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.format_list_numbered,
+            color: AppTheme.primary,
+            size: 20,
+          ),
+          const SizedBox(width: AppTheme.spacingSmall),
+          Expanded(
+            child: Text(
+              'Bilangan yang ditemukan (${angkaDitemukan.length}): '
+              '${angkaDitemukan.join(', ')}',
+              style: const TextStyle(
+                color: AppTheme.primary,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Menampilkan berapa banyak karakter angka (digit 0-9) yang ada di dalam
+/// teks campuran huruf & angka. Dihitung per digit, bukan per kelompok
+/// angka -- jadi "2024" dianggap 4 angka di sini, walau untuk penjumlahan
+/// di atas dia tetap satu bilangan (dua ribu dua puluh empat).
+class _DigitCountBadge extends StatelessWidget {
+  final int jumlahDigit;
+  const _DigitCountBadge({required this.jumlahDigit});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spacingMedium,
+        vertical: AppTheme.spacingSmall,
+      ),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryLight,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppTheme.secondary, width: 1),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.pin_outlined, color: AppTheme.primary, size: 20),
+          const SizedBox(width: AppTheme.spacingSmall),
+          Expanded(
+            child: Text(
+              'Ditemukan $jumlahDigit karakter angka di dalam teks.',
+              style: const TextStyle(
+                color: AppTheme.primary,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ReceiptTape extends StatelessWidget {
   final List<_TapeStep> steps;
   final double total;
   final List<String> diabaikan;
+  final List<String> angkaDitemukan;
+  final int jumlahDigit;
 
   const _ReceiptTape({
     required this.steps,
     required this.total,
     required this.diabaikan,
+    required this.angkaDitemukan,
+    required this.jumlahDigit,
   });
 
   String _fmt(double n) {
-    // Dibulatkan dulu ke 6 desimal supaya sisa pembulatan biner
-    // (mis. -3.5 + 2.7 = -0.7999999999999998) tidak ikut tampil.
     var s = n.toStringAsFixed(6);
     if (s.contains('.')) {
       s = s.replaceFirst(RegExp(r'0+$'), '');
@@ -187,22 +278,33 @@ class _ReceiptTape extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (steps.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(AppTheme.spacingLarge),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: const Text(
-          'Tidak ada angka yang ditemukan pada input tadi.',
-          style: TextStyle(color: AppTheme.error),
-        ),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _DigitCountBadge(jumlahDigit: jumlahDigit),
+          const SizedBox(height: AppTheme.spacingMedium),
+          Container(
+            padding: const EdgeInsets.all(AppTheme.spacingLarge),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: const Text(
+              'Tidak ada angka yang ditemukan pada input tadi.',
+              style: TextStyle(color: AppTheme.error),
+            ),
+          ),
+        ],
       );
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        _FoundNumbersBadge(angkaDitemukan: angkaDitemukan),
+        const SizedBox(height: AppTheme.spacingSmall),
+        _DigitCountBadge(jumlahDigit: jumlahDigit),
+        const SizedBox(height: AppTheme.spacingMedium),
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -284,7 +386,6 @@ class _ReceiptTape extends StatelessWidget {
   }
 }
 
-/// Garis putus-putus tipis, seperti garis potong pada struk kasir.
 class _DashedLine extends StatelessWidget {
   const _DashedLine();
 

@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/app_theme.dart';
+
+// Batas panjang input Ganjil/Genap. Kalau tipe datanya int biasa (bukan
+// BigInt), lebih dari ~18-19 digit sudah rawan overflow/hasil ngaco, jadi
+// dibatasi 20 karakter (termasuk tanda minus) sebagai jaga-jaga.
+const int _kMaxDigitGanjilGenap = 20;
 
 class GanjilGenap extends StatefulWidget {
   const GanjilGenap({super.key});
@@ -11,7 +17,12 @@ class GanjilGenap extends StatefulWidget {
 
 class _GanjilGenapState extends State<GanjilGenap> {
   final _controller = TextEditingController();
-  int? _angka;
+  // Pakai BigInt (bukan int) supaya angka sampai 20 digit tetap presisi.
+  // int biasa di Dart cuma akurat penuh sampai sekitar 19 digit di native,
+  // dan di Flutter Web malah cuma aman sampai ~15-16 digit karena disimpan
+  // sebagai double (JS number) -- lewat dari situ hasilnya bisa salah/
+  // dibulatkan diam-diam.
+  BigInt? _angka;
   bool? _isGenap;
   String? _errorText;
 
@@ -22,7 +33,7 @@ class _GanjilGenapState extends State<GanjilGenap> {
   }
 
   void _cekGanjilGenap() {
-    final angka = int.tryParse(_controller.text.trim());
+    final angka = BigInt.tryParse(_controller.text.trim());
 
     if (angka == null) {
       setState(() {
@@ -35,7 +46,7 @@ class _GanjilGenapState extends State<GanjilGenap> {
 
     setState(() {
       _angka = angka;
-      _isGenap = angka % 2 == 0;
+      _isGenap = angka.isEven;
       _errorText = null;
     });
   }
@@ -62,6 +73,14 @@ class _GanjilGenapState extends State<GanjilGenap> {
             controller: _controller,
             textAlign: TextAlign.center,
             keyboardType: const TextInputType.numberWithOptions(signed: true),
+            // Batasi panjang input: begitu sudah kena _kMaxDigitGanjilGenap
+            // karakter, keyboard otomatis tidak menerima ketikan lagi.
+            maxLength: _kMaxDigitGanjilGenap,
+            inputFormatters: [
+              // Hanya boleh angka dan tanda minus di depan.
+              FilteringTextInputFormatter.allow(RegExp(r'^-?\d*$')),
+              LengthLimitingTextInputFormatter(_kMaxDigitGanjilGenap),
+            ],
             style: const TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.bold,
@@ -72,6 +91,7 @@ class _GanjilGenapState extends State<GanjilGenap> {
             decoration: InputDecoration(
               hintText: '0',
               errorText: _errorText,
+              counterText: '', // sembunyikan counter default biar rapi
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(
@@ -101,7 +121,7 @@ class _GanjilGenapState extends State<GanjilGenap> {
 /// Lencana hasil: GENAP pakai warna secondary (tenang),
 /// GANJIL pakai warna primary (tegas) — tetap dari palet AppTheme.
 class _ParityBadge extends StatelessWidget {
-  final int angka;
+  final BigInt angka;
   final bool isGenap;
   const _ParityBadge({required this.angka, required this.isGenap});
 
@@ -150,7 +170,7 @@ class _ParityBadge extends StatelessWidget {
 /// Kalau satu titik tersisa sendirian tanpa pasangan, bilangannya ganjil.
 /// Ini bukan sekadar hiasan — bentuknya memang menjelaskan konsep paritas.
 class _ParityDots extends StatelessWidget {
-  final int angka;
+  final BigInt angka;
   const _ParityDots({required this.angka});
 
   static const int _maxDots = 40;
@@ -159,9 +179,9 @@ class _ParityDots extends StatelessWidget {
   Widget build(BuildContext context) {
     final total = angka.abs();
 
-    if (total == 0) return const SizedBox.shrink();
+    if (total == BigInt.zero) return const SizedBox.shrink();
 
-    if (total > _maxDots) {
+    if (total > BigInt.from(_maxDots)) {
       return const Text(
         'Angka ini terlalu besar untuk digambarkan satu per satu, '
         'tapi hasil di atas tetap akurat.',
@@ -170,8 +190,10 @@ class _ParityDots extends StatelessWidget {
       );
     }
 
-    final pairs = total ~/ 2;
-    final hasSisa = total % 2 == 1;
+    // Aman dikonversi ke int di sini karena sudah dipastikan <= _maxDots.
+    final totalInt = total.toInt();
+    final pairs = totalInt ~/ 2;
+    final hasSisa = totalInt % 2 == 1;
 
     return Column(
       children: [
