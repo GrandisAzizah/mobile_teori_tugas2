@@ -4,7 +4,6 @@ import '../theme/app_theme.dart';
 
 enum _Operasi { tambah, kurang, kali, bagi }
 
-// Dilempar (throw) dari _evaluasiDenganPrioritas saat ketemu pembagian dengan 0, supaya bisa ditangkap dan ditampilkan sebagai pesan error, bukan bikin aplikasi crash atau nampilin "Infinity".
 class _BagiNolException implements Exception {}
 
 class Kalkulator extends StatefulWidget {
@@ -15,17 +14,13 @@ class Kalkulator extends StatefulWidget {
 }
 
 class _KalkulatorState extends State<Kalkulator> {
-  // Nilai yang sedang ditampilkan / sedang diketik di layar.
   String _layar = '0';
 
-  // Antrian angka & operator yang sudah "dikunci" selama user ngetik. Contoh: setelah ngetik "12 + 4 x", isinya _antrianAngka=[12,4] dan _antrianOperasi=[tambah, kali] — belum dihitung, nunggu ditekan "=". Ini yang bikin bisa dukung urutan operasi matematika (kali/bagi duluan).
   final List<double> _antrianAngka = [];
   final List<_Operasi> _antrianOperasi = [];
 
-  // Teks ekspresi kecil di atas layar, misal "12 + 4 ×".
   String _ekspresi = '';
 
-  // True jika layar baru saja menampilkan hasil (=) atau baru pilih operator, sehingga input angka berikutnya harus mulai dari awal (bukan menyambung).
   bool _mulaiInputBaru = true;
 
   String? _errorText;
@@ -43,13 +38,10 @@ class _KalkulatorState extends State<Kalkulator> {
     }
   }
 
-  // Layar & keypad memakai koma (,) sebagai tanda desimal (format Indonesia).
-  // double.parse/tryParse tetap butuh titik, jadi dikonversi saat parsing.
   double? _parseLayar(String teks) {
     return double.tryParse(teks.replaceAll(',', '.'));
   }
 
-  // Di atas batas ini (atau saking kecilnya mendekati nol), hasil ditampilkan pakai notasi ilmiah (mis. "4,98082934503E18") biar tidak kepanjangan di layar.
   static const double _batasBesar = 1e12;
   static const double _batasKecil = 1e-9;
 
@@ -65,16 +57,15 @@ class _KalkulatorState extends State<Kalkulator> {
     if (n == n.roundToDouble()) {
       return n.toInt().toString();
     }
-    // Batasi digit desimal biar tidak kepanjangan, tapi buang nol berlebih.
+
     String s = n.toStringAsFixed(8);
     s = s.replaceFirst(RegExp(r'0+$'), '');
     s = s.replaceFirst(RegExp(r'\.$'), '');
     return s.replaceFirst('.', ',');
   }
 
-  // Format notasi ilmiah, mis. 4980829345030000000 -> "4,98082934503E18".
   String _formatIlmiah(double n) {
-    String s = n.toStringAsExponential(10); // contoh: "4.9808293450e+18"
+    String s = n.toStringAsExponential(10);
     final bagian = s.split('e');
     String mantissa = bagian[0];
     if (mantissa.contains('.')) {
@@ -160,7 +151,6 @@ class _KalkulatorState extends State<Kalkulator> {
     }
   }
 
-  // Bangun teks ekspresi berjalan buat ditampilkan di layar kecil, misal "12 + 4 ×" (operator terakhir belum ada angkanya).
   String _bangunEkspresiBerjalan() {
     final buf = StringBuffer();
     for (int i = 0; i < _antrianOperasi.length; i++) {
@@ -182,10 +172,8 @@ class _KalkulatorState extends State<Kalkulator> {
       _errorText = null;
 
       if (_mulaiInputBaru && _antrianOperasi.isNotEmpty) {
-        // User ganti pikiran soal operator sebelum sempat ngetik angka baru (mis. pencet "+" lalu berubah pikiran pencet "×") -> cukup timpa operator terakhir, jangan sampai angkanya dobel.
         _antrianOperasi[_antrianOperasi.length - 1] = operasi;
       } else {
-        // Simpan angka & operator ke antrian. TIDAK dihitung sekarang - baru dihitung sekaligus pas "=" ditekan, sesuai prioritas kali/bagi.
         _antrianAngka.add(nilaiSaatIni);
         _antrianOperasi.add(operasi);
       }
@@ -237,7 +225,6 @@ class _KalkulatorState extends State<Kalkulator> {
     });
   }
 
-  // Evaluasi urutan angka & operator sesuai prioritas matematika (PEMDAS): kali (×) & bagi (÷) dihitung duluan dari kiri ke kanan, baru sisanya tambah (+) & kurang (−) juga dari kiri ke kanan. Contoh: [12, 4, 2] dengan [tambah, kali] -> 12 + (4 × 2) = 20.
   double _evaluasiDenganPrioritas(List<double> angka, List<_Operasi> operasi) {
     // Tahap 1: selesaikan semua kali & bagi lebih dulu.
     final List<double> angkaSisa = [angka[0]];
@@ -258,7 +245,6 @@ class _KalkulatorState extends State<Kalkulator> {
       }
     }
 
-    // Tahap 2: baru tambah & kurang, dari kiri ke kanan.
     double hasil = angkaSisa[0];
     for (int i = 0; i < operasiSisa.length; i++) {
       hasil = _hitungOperasi(hasil, angkaSisa[i + 1], operasiSisa[i]);
@@ -268,7 +254,6 @@ class _KalkulatorState extends State<Kalkulator> {
 
   @override
   Widget build(BuildContext context) {
-    // Catatan: tidak pakai Scaffold/AppBar sendiri di sini karena halaman ini ditampilkan di dalam MainScreen yang sudah punya AppBar (lihat lib/screens/main_screen.dart).
     return Column(
       children: [
         _Layar(ekspresi: _ekspresi, nilai: _layar, errorText: _errorText),
@@ -300,7 +285,6 @@ class _KalkulatorState extends State<Kalkulator> {
   }
 }
 
-// Layar tampilan kalkulator: baris ekspresi kecil + angka besar.
 class _Layar extends StatelessWidget {
   final String ekspresi;
   final String nilai;
@@ -368,7 +352,6 @@ class _Layar extends StatelessWidget {
   }
 }
 
-// Grid tombol kalkulator: AC, ⌫, %, ÷ / 7 8 9 × / 4 5 6 − / 1 2 3 + / +/- 0 , =
 class _Keypad extends StatelessWidget {
   final void Function(String digit) onAngka;
   final VoidCallback onHapus;

@@ -12,11 +12,9 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // Validasi apakah form field sudah diisi
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  // Sembunyikan password
   bool _isPasswordVisible = false;
 
   @override
@@ -124,7 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   setState(() {
                     _isPasswordVisible = !_isPasswordVisible;
                   });
-                }, // Tombol untuk menampilkan/menyembunyikan password
+                },
               ),
             ),
             validator: (value) {
@@ -138,19 +136,15 @@ class _LoginScreenState extends State<LoginScreen> {
           ElevatedButton(
             onPressed: () {
               if (_formKey.currentState!.validate()) {
-                // Ambil nilai dari form field
                 String username = _usernameController.text.trim();
                 String password = _passwordController.text.trim();
 
-                // Validasi
                 if (username == 'user' && password == '1234') {
-                  // Login berhasil
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(builder: (context) => const MainScreen()),
-                  ); // Navigasi ke halaman utama
+                  );
                 } else if (username != 'user') {
-                  // Login gagal
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Container(

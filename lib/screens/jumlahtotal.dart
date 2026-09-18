@@ -18,9 +18,6 @@ class _TapeStep {
 class _JumlahTotalState extends State<JumlahTotal> {
   final _controller = TextEditingController();
 
-  // Pakai BigInt (bukan double) karena sekarang semua angka diperlakukan
-  // sebagai bilangan bulat murni -- gak ada lagi desimal, jadi gak ada
-  // resiko pembulatan floating-point sama sekali, walau angkanya panjang.
   BigInt _total = BigInt.zero;
   List<_TapeStep> _steps = [];
   List<String> _diabaikan = [];
@@ -37,18 +34,6 @@ class _JumlahTotalState extends State<JumlahTotal> {
   void _hitungTotal() {
     final text = _controller.text;
 
-    // Cuma bilangan BULAT yang ditangkap (gak ada lagi grup desimal).
-    // Ini sengaja: kalau titik dianggap tanda desimal, angka format
-    // Indonesia semacam "11.370" (artinya sebelas ribu tiga ratus tujuh
-    // puluh) malah kebaca "11,37" -- rancu. Sekarang titik diperlakukan
-    // sama kayak huruf: cuma pemisah, bukan bagian dari angka. Jadi
-    // "11.370" -> dua bilangan terpisah: 11 dan 370.
-    //
-    // Minus HANYA dianggap tanda negatif kalau karakter sebelumnya BUKAN
-    // angka (didahului spasi/huruf/awal teks), contoh: "suhu -5 derajat"
-    // -> -5. Kalau minusnya nempel di ANTARA dua angka (mis. rentang
-    // tanggal "1-14 September"), itu dianggap cuma pemisah biasa, jadi
-    // "1" dan "14" dua-duanya tetap positif -- bukan "1" dan "-14".
     final valid = RegExp(r'(?<!\d)-?\d+')
         .allMatches(text)
         .map((m) => BigInt.parse(m.group(0)!))
@@ -59,14 +44,8 @@ class _JumlahTotalState extends State<JumlahTotal> {
         .map((m) => m.group(0)!)
         .toList();
 
-    // Jumlah karakter angka (digit 0-9) di dalam teks, dihitung per karakter
-    // -- bukan per "kelompok angka". Contoh: "hskeksmns2024" -> 4 angka
-    // (2, 0, 2, 4), meskipun untuk penjumlahan di atas "2024" tetap
-    // diperlakukan sebagai satu bilangan (2024).
     final jumlahDigit = RegExp(r'\d').allMatches(text).length;
 
-    // Daftar bilangan yang benar-benar dipakai untuk penjumlahan, dalam
-    // urutan kemunculannya.
     final angkaDitemukan = valid.map((n) => n.toString()).toList();
 
     final steps = <_TapeStep>[];
@@ -171,9 +150,6 @@ class _EmptyHint extends StatelessWidget {
   }
 }
 
-/// Menampilkan daftar bilangan (bukan sekadar digit) yang benar-benar
-/// dipakai untuk penjumlahan, sesuai urutan kemunculan di teks. Ini beda
-/// dari _DigitCountBadge: "2024" di sini dihitung SATU bilangan, bukan 4.
 class _FoundNumbersBadge extends StatelessWidget {
   final List<String> angkaDitemukan;
   const _FoundNumbersBadge({required this.angkaDitemukan});
@@ -217,10 +193,6 @@ class _FoundNumbersBadge extends StatelessWidget {
   }
 }
 
-/// Menampilkan berapa banyak karakter angka (digit 0-9) yang ada di dalam
-/// teks campuran huruf & angka. Dihitung per digit, bukan per kelompok
-/// angka -- jadi "2024" dianggap 4 angka di sini, walau untuk penjumlahan
-/// di atas dia tetap satu bilangan (dua ribu dua puluh empat).
 class _DigitCountBadge extends StatelessWidget {
   final int jumlahDigit;
   const _DigitCountBadge({required this.jumlahDigit});

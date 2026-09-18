@@ -7,7 +7,6 @@ import 'kalkulator.dart';
 import 'ganjilgenap.dart';
 import 'jumlahtotal.dart';
 
-// Main screen dengan sidebar
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -16,17 +15,15 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 0; // 0: Kalkulator, 1: Ganjil/Genap, 2: Daftar Kelompok, 3: Jumlah Total Angka
+  int _selectedIndex = 0;
 
-  // Daftar halaman (urut sesuai indeks menu)
   final List<Widget> _pages = [
-    const Kalkulator(), // indeks 0
-    const GanjilGenap(), // indeks 1 (bagian D)
-    const DaftarKelompokScreen(), // indeks 2
-    const JumlahTotal(), // indeks 3 (bagian D)
+    const Kalkulator(),
+    const GanjilGenap(),
+    const DaftarKelompokScreen(),
+    const JumlahTotal(),
   ];
 
-  // Judul AppBar untuk setiap halaman
   final List<String> _titles = [
     'Kalkulator',
     'Cek Ganjil/Genap',
@@ -34,7 +31,6 @@ class _MainScreenState extends State<MainScreen> {
     'Jumlah Total Angka',
   ];
 
-  // Halaman untuk logout
   void _onItemTapped(int index) {
     if (index == 4) {
       // Nanti diganti dengan logika untuk logout
@@ -44,7 +40,6 @@ class _MainScreenState extends State<MainScreen> {
       return;
     }
 
-    // Mengganti halaman untuk indeks 0-3
     setState(() {
       _selectedIndex = index;
     });
